@@ -6,7 +6,7 @@ export const getAllUsers = async (req, res) => {
   try {
     users = await User.find();
   } catch (error) {
-    console.log(error);
+    return console.log(error);
   }
   if (!users) {
     return res.status(500).json({ message: "Unexpected Error Occured" });
@@ -18,7 +18,6 @@ export const signup = async (req, res, next) => {
   // implement formik in react frontend.
   const { name, email, password } = req.body;
   const isExist = await User.find({ email });
-  console.log(isExist);
   if (isExist && isExist.length) {
     return res.status(400).json({ message: "User Already Exist" });
   }
@@ -48,7 +47,7 @@ export const login = async (req, res, next) => {
   try {
     oldUser = await User.findOne({ email });
   } catch (error) {
-    console.log(error);
+    return console.log(error);
   }
   if (!oldUser) {
     return res.status(404).json({ message: "No user Found" });

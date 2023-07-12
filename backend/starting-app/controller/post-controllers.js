@@ -1,4 +1,6 @@
+import mongoose from "mongoose";
 import Post from "../models/Post";
+import User from "../models/User";
 
 export const getAllPost = async (req, res) => {
   let posts;
@@ -30,6 +32,17 @@ export const addPost = async (req, res) => {
   ) {
     return res.status(422).json({ message: "Invalid Data" });
   }
+
+  let existingUser;
+  try {
+    existingUser = await User.findById(user);
+  } catch (error) {
+    return console.log(error);
+  }
+  if (!existingUser) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
   let post;
   try {
     post = new Post({
@@ -40,9 +53,14 @@ export const addPost = async (req, res) => {
       date: new Date(`${date}`),
       user,
     });
-    post = await post.save();
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    existingUser.posts.push(post);
+    await existingUser.save({ session });
+    post = await post.save({ session });
+    session.commitTransaction();
   } catch (error) {
-    console.log(error);
+    return console.log(error);
   }
 
   if (!post) {
@@ -57,7 +75,7 @@ export const getPostById = async (req, res) => {
   try {
     post = await Post.findById(id);
   } catch (error) {
-    console.log(error);
+    return console.log(error);
   }
   if (!post) {
     return res.status(404).json({ message: "No Post Found" });
@@ -91,7 +109,7 @@ export const updatePost = async (req, res) => {
       date: new Date(`${date}`),
     });
   } catch (error) {
-    console.log(error);
+    return console.log(error);
   }
   if (!post) {
     return res.status(500).json({ message: "Unable to Update" });
@@ -103,9 +121,15 @@ export const deletePost = async (req, res) => {
   const id = req.params.id;
   let post;
   try {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    post = await Post.findById(id).populate("user");
+    post.user.posts.pull(post);
+    await post.user.save({ session });
     post = await Post.findByIdAndRemove(id);
+    session.commitTransaction();
   } catch (error) {
-    console.log(error);
+    return console.log(error);
   }
   if (!post) {
     return res.status(500).json({ message: "Unable to delete" });

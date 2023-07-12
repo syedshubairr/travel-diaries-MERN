@@ -1,4 +1,4 @@
-import { model, Schema } from "mongoose";
+import mongoose, { model, Schema } from "mongoose";
 
 const postSchema = new Schema({
   title: {
@@ -22,7 +22,8 @@ const postSchema = new Schema({
     required: true,
   },
   user: {
-    type: String,
+    type: mongoose.Types.ObjectId,
+    ref: "User",
     required: true,
   },
 });
